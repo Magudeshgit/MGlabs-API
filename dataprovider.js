@@ -43,7 +43,7 @@ exp.get('/getuser', async (req,resp)=>{
     
 })
 
-const port = process.env.PORT
+const port = process.env.PORT || 4000
 
 exp.listen(port, ()=>{
     console.log('Provider Running on port ', port + '!!!')
