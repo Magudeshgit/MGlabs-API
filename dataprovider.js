@@ -1,46 +1,192 @@
+
+const aws = require('./utilities/awsconfig')
 const express = require('express')
 const cors = require('cors')
 const bp = require("body-parser")
+const ec2 = require('./utilities/awsconfig')
 const exp = express()
 exp.use(bp.urlencoded({extended: false}))
 exp.use(bp.json())
 exp.use(cors())
 
+//AWS Methods
 
-exp.get('/githubaccess', async (req,resp)=>{
-    console.log('incoming request')
-    const CODE = req.query.code
-    const CLIENT_ID = '750195eef141e27ece65'
-    const CLIENT_SECRET = "315ed42e046290671d6a004a3d4d727a8a325a0b"
-    const api = await fetch(
-        'https://github.com/login/oauth/access_token?client_id=' + CLIENT_ID + '&client_secret='+ CLIENT_SECRET +'&code='+CODE,
+async function getInstanceData(){ //To retrieve overall instances data
+    const InstanceData = {
+        InstanceName: '',
+        InstanceID: '',
+        IPAddress: '',
+        Status: false
+    }
+        
+    return new Promise((resolve,reject)=>{ aws.describeInstances({DryRun:false}, async (err,data)=>{
+        if(!err)
         {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json'
+            //console.log("dt", data['Reservations'][0]['Instances'])
+            console.log("State ",data['Reservations'][0]['Instances'][0]['State']['Name'])
+            InstanceData.InstanceID = data['Reservations'][0]['Instances'][0]['InstanceId']
+            console.log("iname",await getInstanceName(InstanceData.InstanceID))
+            InstanceData.InstanceName =  await getInstanceName(InstanceData.InstanceID)
+            console.log(data['Reservations'][0]['Instances'][0]['State']['Name'])
+            if (data['Reservations'][0]['Instances'][0]['State']['Name'] === 'running') InstanceData.Status = true; else InstanceData.Status = false
+            InstanceData.IPAddress = '255.255.255.255'
+            console.log("resolving")
+            resolve(InstanceData)
+        }
+        else
+        {
+            console.log("Error")
+            console.log(err)    
+            reject(err)
+        }
+    })
+    })
+}
+
+async function startInstance(instanceID){ //To Start an Instance
+    let params = {
+        InstanceIds: [instanceID],
+        DryRun: false
+    };
+
+    return new Promise((resolve,reject)=>{ec2.startInstances(params, (err,data)=>{
+        if (err)
+        {
+            reject(err)
+        }
+        else
+        {
+            resolve(data)
+        }
+        })
+    })
+}
+
+async function rebootInstance(instanceID){ //To Start an Instance
+    let params = {
+        InstanceIds: [instanceID],
+        DryRun: false
+    };
+
+    return new Promise((resolve,reject)=>{ec2.rebootInstances(params, (err,data)=>{
+        if (err)
+        {
+            reject(err)
+        }
+        else
+        {
+            resolve(data)
+        }
+        })
+    })
+}
+
+async function stopInstance(instanceID){ //To Start an Instance
+    let params = {
+        InstanceIds: [instanceID],
+        DryRun: false
+    };
+
+    return new Promise((resolve,reject)=>{ec2.stopInstances(params, (err,data)=>{
+        if (err)
+        {
+            reject(err)
+        }
+        else
+        {
+            resolve(data)
+        }
+        })
+    })
+}
+
+function getStatus(instanceID) //Get Status info such as State and Status
+{
+    var params = {
+        IncludeAllInstances: true,
+        InstanceIds: ['i-0d9fffc559ba22742']
+    }
+    const data = new Promise((resolve,reject)=>{ec2.describeInstanceStatus(params, (err,data)=>{
+        if (err)
+        {
+            reject(err)
+        }
+        else {
+            resolve(
+                {
+                    "Status": (data['InstanceStatuses'][0]['InstanceState']['Name'] === "running")?true:false,
+                    "Checks": data['InstanceStatuses'][0]['SystemStatus']['Status']
+                }
+                )
+            // resolve(data['InstanceStatuses'][0])
+            console.log("lkjlj",data['InstanceStatuses'][1])
+        }
+    })
+    })
+
+    return data.then(dt=>dt)
+}
+
+function getInstanceName(id) //Subsidiary function of getInstanceData to retrieve instance name
+{
+    const par = {
+    Filters: [
+            {
+                Name: "resource-id",
+                Values: [id]
+            }
+        ]
+    }   
+    return new Promise((resolve,reject)=>{
+        aws.describeTags(par, (err, data)=>{
+            if (!err)
+            {  
+                resolve(data['Tags'][0]['Value'])
+            }
+            else
+            {
+                reject(err)
             }
         })
-    const dt = await api.json()    
-    console.log(dt)
-    resp.json(dt)
+    })
+}
+
+
+
+// URL Methods
+exp.get('/Instancedata', (req,resp)=>{
+    console.log("New Request")
+    getInstanceData().then((d)=>{
+        console.log("ddd",d)
+        resp.json(d)
+    })
 })
 
-exp.get('/getuser', async (req,resp)=>{
-    const token = req.query.access_token
-    console.log(token)
-    const headerList =  {
-        method:'GET',
-        headers: {
-            Authorization: 'Bearer ' + token
-        }
-    }
-    console.log(headerList)
-    const ft = await fetch('https://api.github.com/user', headerList)
+exp.get('/getStatus',(req,resp)=>{
+    getStatus().then(data=>resp.json(data))
+})
 
-    const dat = await ft.json()
-    console.log(dat)
-    resp.json(dat)
-    
+exp.post('/startInstance', (req,resp)=>{
+    startInstance(req.body['ID']).then(response=>{
+        console.log('sds',response)
+        resp.json(response)
+    })
+})
+
+exp.post('/rebootInstance', (req,resp)=>{
+    console.log('reboot requested')
+    rebootInstance(req.body['ID']).then(response=>{
+        console.log('sds',response)
+        resp.json(response)
+    })
+})
+
+exp.post('/stopInstance', (req,resp)=>{
+    console.log('stop requested')
+    stopInstance(req.body['ID']).then(response=>{
+        console.log('sds',response)
+        resp.json(response)
+    })
 })
 
 const port = process.env.PORT || 4000
