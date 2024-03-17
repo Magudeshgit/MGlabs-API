@@ -3,8 +3,10 @@ const AWS=require('aws-sdk')
 const mycredentials = 
 {
     accessKeyId: process.env.ACCESS_KEY || '',
-    secretAccessKey: process.env.SECRET_KEY ||''
+    secretAccessKey: process.env.SECRET_KEY
 }
+
+console.log(process.env.SECRET_KEY)
 
 console.log(mycredentials)
 
