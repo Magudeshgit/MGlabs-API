@@ -6,7 +6,8 @@ const mycredentials =
     secretAccessKey: process.env.SECRET_KEY
 }
 
-console.log(process.env.SECRET_KEY)
+
+//console.log(proces)
 
 console.log(mycredentials)
 
@@ -26,5 +27,4 @@ const costexplorer = new AWS.CostExplorer(
     }
 );
 
-module.exports = ec2
-module.exports = costexplorer
+module.exports = {ec2, costexplorer}

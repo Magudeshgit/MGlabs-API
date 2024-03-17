@@ -1,7 +1,4 @@
-
-const aws = require('./utilities/awsconfig')
-const ec2 = require('./utilities/awsconfig')
-const costexplorer = require('./utilities/awsconfig')
+const {ec2, costexplorer} = require('./utilities/awsconfig')
 const express = require('express')
 const cors = require('cors')
 const bp = require("body-parser")
@@ -20,8 +17,8 @@ async function getInstanceData(){ //To retrieve overall instances data
         IPAddress: '',
         Status: false
     }
-        
-    return new Promise((resolve,reject)=>{ aws.describeInstances({DryRun:false}, async (err,data)=>{
+
+    return new Promise((resolve,reject)=>{ ec2.describeInstances({DryRun:false}, async (err,data)=>{
         if(!err)
         {
             //console.log("dt", data['Reservations'][0]['Instances'])
@@ -140,7 +137,7 @@ function getInstanceName(id) //Subsidiary function of getInstanceData to retriev
         ]
     }   
     return new Promise((resolve,reject)=>{
-        aws.describeTags(par, (err, data)=>{
+        ec2.describeTags(par, (err, data)=>{
             if (!err)
             {  
                 resolve(data['Tags'][0]['Value'])
