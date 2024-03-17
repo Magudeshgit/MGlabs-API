@@ -2,8 +2,8 @@ const AWS=require('aws-sdk')
 
 const mycredentials = 
 {
-    accessKeyId: '',
-    secretAccessKey: '',
+    accessKeyId: process.env.ACCESS_KEY || '',
+    secretAccessKey: process.env.SECRET_KEY ||''
 }
 
 AWS.config.credentials = mycredentials
