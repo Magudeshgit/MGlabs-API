@@ -1,15 +1,17 @@
 
 const aws = require('./utilities/awsconfig')
+const ec2 = require('./utilities/awsconfig')
+const costexplorer = require('./utilities/awsconfig')
 const express = require('express')
 const cors = require('cors')
 const bp = require("body-parser")
-const ec2 = require('./utilities/awsconfig')
 const exp = express()
 exp.use(bp.urlencoded({extended: false}))
 exp.use(bp.json())
 exp.use(cors())
 
 //AWS Methods
+console.log("env", process.env.REACT_APP_AWS_ID)
 
 async function getInstanceData(){ //To retrieve overall instances data
     const InstanceData = {
@@ -151,6 +153,43 @@ function getInstanceName(id) //Subsidiary function of getInstanceData to retriev
     })
 }
 
+function getCostInfo()
+{
+    let params = 
+    {
+        Granularity: 'MONTHLY',
+        Metrics: ['UnblendedCost'],
+        TimePeriod: {
+            End: '2024-03-16',
+            Start: '2024-03-01'
+        },
+        // Filter: {
+        //     Dimensions: {
+        //         Key: 'USAGE_TYPE',
+        //         Values: ['GetDimesionValues']
+        //     }
+        // }
+    }
+    const data = new Promise((resolve, reject)=>{
+        costexplorer.getCostAndUsage(params, (err,resp)=>{
+            if (err)
+            {
+                console.log('err',err)
+                reject(err)
+            }
+            else{
+                console.log(resp)
+                resolve(resp)
+            }
+        })
+    })
+    return data.then(dt=>{
+        const TimePeriod = dt['ResultsByTime'][0]["TimePeriod"]
+        const Cost = dt['ResultsByTime'][0]["Total"]["UnblendedCost"]
+        return [TimePeriod, Cost]
+    })
+}
+
 
 
 // URL Methods
@@ -164,6 +203,11 @@ exp.get('/Instancedata', (req,resp)=>{
 
 exp.get('/getStatus',(req,resp)=>{
     getStatus().then(data=>resp.json(data))
+})
+
+exp.get('/getcostdetails', (req,resp)=>{
+    console.log("getting cost")
+    getCostInfo().then(op=>{console.log(op); resp.json(op)})
 })
 
 exp.post('/startInstance', (req,resp)=>{
