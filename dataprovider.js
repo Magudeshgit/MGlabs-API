@@ -152,20 +152,15 @@ function getInstanceName(id) //Subsidiary function of getInstanceData to retriev
 
 function getCostInfo()
 {
+    let date = new Date()
     let params = 
     {
         Granularity: 'MONTHLY',
         Metrics: ['UnblendedCost'],
         TimePeriod: {
-            End: '2024-03-16',
-            Start: '2024-03-01'
-        },
-        // Filter: {
-        //     Dimensions: {
-        //         Key: 'USAGE_TYPE',
-        //         Values: ['GetDimesionValues']
-        //     }
-        // }
+            End: date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(),//'2024-03-16',
+            Start: date.getFullYear() + '-' + (date.getMonth() + 1) + '-01'
+        }
     }
     const data = new Promise((resolve, reject)=>{
         costexplorer.getCostAndUsage(params, (err,resp)=>{
