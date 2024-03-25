@@ -158,8 +158,8 @@ function getCostInfo()
         Granularity: 'MONTHLY',
         Metrics: ['UnblendedCost'],
         TimePeriod: {
-            End: date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate(),//'2024-03-16',
-            Start: date.getFullYear() + '-' + (date.getMonth() + 1) + '-01'
+            End: date.toLocaleDateString("en-CA"),//'2024-03-16',
+            Start: date.getFullYear() + '-' + ((date.getMonth() < 10)?"0"+(1+date.getMonth()):date.getMonth()) + '-01'
         }
     }
     const data = new Promise((resolve, reject)=>{
