@@ -149,7 +149,14 @@ function getInstanceName(id) //Subsidiary function of getInstanceData to retriev
         })
     })
 }
-
+function currencyRates()
+{
+    return new Promise((resolve, reject)=>{
+        fetch('https://api.exchangerate-api.com/v4/latest/USD')
+        .then(currency=>currency.json())
+        .then(currencyjson=>resolve(currencyjson.rates['INR']))
+    })    
+}
 function getCostInfo()
 {
     let date = new Date()
@@ -176,8 +183,9 @@ function getCostInfo()
         })
     })
     return data.then(dt=>{
+        console.log
         const TimePeriod = dt['ResultsByTime'][0]["TimePeriod"]
-        const Cost = dt['ResultsByTime'][0]["Total"]["UnblendedCost"]
+        const Cost = dt['ResultsByTime'][0]["Total"]["UnblendedCost"] * currencyRates
         return [TimePeriod, Cost]
     })
 }
