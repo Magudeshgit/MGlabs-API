@@ -6,9 +6,6 @@ const mycredentials =
     secretAccessKey: process.env.SECRET_KEY
 }
 
-
-//console.log(proces)
-
 console.log(mycredentials)
 
 AWS.config.credentials = mycredentials

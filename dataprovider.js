@@ -149,12 +149,20 @@ function getInstanceName(id) //Subsidiary function of getInstanceData to retriev
         })
     })
 }
-function currencyRates()
+function currencyRates(USD)
 {
+
     return new Promise((resolve, reject)=>{
-        fetch('https://api.exchangerate-api.com/v4/latest/USD')
-        .then(currency=>currency.json())
-        .then(currencyjson=>resolve(currencyjson.rates['INR']))
+        try {
+            fetch('https://api.exchangerate-api.com/v4/latest/USD')
+                .then(currency=>currency.json())
+                .then(currencyjson=>{resolve(currencyjson.rates.INR*USD)})
+
+        } catch (error) {
+            console.log(error)
+            reject(error)
+        }
+       
     })    
 }
 function getCostInfo()
@@ -182,11 +190,22 @@ function getCostInfo()
             }
         })
     })
+    
+
     return data.then(dt=>{
-        console.log
         const TimePeriod = dt['ResultsByTime'][0]["TimePeriod"]
-        const Cost = dt['ResultsByTime'][0]["Total"]["UnblendedCost"] * currencyRates
-        return [TimePeriod, Cost]
+        const costconv = new Promise((resolve,reject)=>{
+            try {
+                console.log("actual cost",dt['ResultsByTime'][0]["Total"]["UnblendedCost"]["Amount"])
+                currencyRates(dt['ResultsByTime'][0]["Total"]["UnblendedCost"]["Amount"]).then(dt=>resolve(dt))
+            } catch (error) {
+                console.log(error)
+                reject(error)
+            }
+        })
+        //return costconv.then(ip=>{console.log("sd",ip); return ip})
+        costconv.then(op=>console.log("conv cost", op))
+        return costconv.then(op=>[TimePeriod,{Amount: op.toFixed(2)}])
     })
 }
 
